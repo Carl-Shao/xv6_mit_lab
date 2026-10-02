@@ -508,5 +508,9 @@ sys_sigalarm(void)
 int 
 sys_sigreturn(void)
 {
+  struct proc *p = myproc();
+  *p->trapframe = p->save_trapframe;
+  p->trapframe->epc = p->alarm_epc;
+  p->alarm_already = 0;
   return 0;
 }
