@@ -7,6 +7,8 @@
 #include "spinlock.h"
 #include "proc.h"
 
+int pgaccess(pagetable_t pagetable, uint64 va);
+
 uint64
 sys_exit(void)
 {
@@ -76,14 +78,41 @@ sys_sleep(void)
 }
 
 
-#ifdef LAB_PGTBL
 int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+  uint64 addr;
+  int n;
+  int bitmask;
+
+  if(argaddr(0, &addr) < 0) {
+    return -1;
+  }
+  if(argint(1, &n) < 0) {
+    return -1;
+  }
+  if(n < 0 || n > 32) {
+    return -1;
+  }
+  if(argint(2, &bitmask) < 0) {
+    return -1;
+  }
+
+  int result = 0;
+  struct proc *p = myproc();
+  for(int i = 0; i < n; i++) {
+    int va = addr + i * PGSIZE;
+    int abit = pgaccess(p->pagetable, va);
+    result = result | abit << i;
+  }
+
+  if(copyout(p->pagetable, bitmask, (char*)&result, sizeof(result)) < 0){
+    return -1;
+  }
   return 0;
 }
-#endif
+
 
 uint64
 sys_kill(void)
